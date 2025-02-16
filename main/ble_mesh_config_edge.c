@@ -13,6 +13,7 @@
 #if CONFIG_BLE_MESH_RPR_SRV
 #include "esp_ble_mesh_rpr_model_api.h"
 #endif
+#include <esp_ble_mesh_df_model_api.h>
 
 #define TAG TAG_EDGE
 #define TAG_W "Debug"
@@ -72,11 +73,41 @@ static esp_ble_mesh_cfg_srv_t config_server = {
     .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20),
 };
 
+#if CONFIG_BLE_MESH_DF_SRV
+static esp_ble_mesh_df_srv_t directed_forwarding_server = {
+    .directed_net_transmit = ESP_BLE_MESH_TRANSMIT(1, 100),
+    .directed_relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 100),
+    .default_rssi_threshold = (-80),
+    .rssi_margin = 20,
+    .directed_node_paths = 20,
+    .directed_relay_paths = 20,
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
+    .directed_proxy_paths = 20,
+#else
+    .directed_proxy_paths = 0,
+#endif
+#if defined(CONFIG_BLE_MESH_FRIEND)
+    .directed_friend_paths = 20,
+#else
+    .directed_friend_paths = 0,
+#endif
+    .path_monitor_interval = 120,
+    .path_disc_retry_interval = 300,
+    .path_disc_interval = ESP_BLE_MESH_PATH_DISC_INTERVAL_30_SEC,
+    .lane_disc_guard_interval = ESP_BLE_MESH_LANE_DISC_GUARD_INTERVAL_10_SEC,
+    .directed_ctl_net_transmit = ESP_BLE_MESH_TRANSMIT(1, 100),
+    .directed_ctl_relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 100),
+};
+#endif
+
 static esp_ble_mesh_model_t root_models[] = {
 #if CONFIG_BLE_MESH_RPR_SRV
     ESP_BLE_MESH_MODEL_RPR_SRV(NULL),
 #endif
     ESP_BLE_MESH_MODEL_CFG_SRV(&config_server),
+#if CONFIG_BLE_MESH_DF_SRV
+    ESP_BLE_MESH_MODEL_DF_SRV(&directed_forwarding_server),
+#endif
 };
 
 static const esp_ble_mesh_client_op_pair_t client_op_pair[] = {
@@ -368,6 +399,35 @@ static void ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event, esp_bl
     default:
         break;
     }
+}
+
+static void ble_mesh_df_server_cb(esp_ble_mesh_df_server_cb_event_t event, esp_ble_mesh_df_server_cb_param_t *param) {
+    esp_ble_mesh_df_server_table_change_t change = {0};
+    esp_ble_mesh_uar_t path_origin;
+    esp_ble_mesh_uar_t path_target;
+
+    if (event == ESP_BLE_MESH_DF_SERVER_TABLE_CHANGE_EVT) {
+        memcpy(&change, &param->value.table_change, sizeof(esp_ble_mesh_df_server_table_change_t));
+
+        switch (change.action) {
+            case ESP_BLE_MESH_DF_TABLE_ADD: {
+                memcpy(&path_origin, &change.df_table_info.df_table_entry_add_remove.path_origin, sizeof(path_origin));
+                memcpy(&path_target, &change.df_table_info.df_table_entry_add_remove.path_target, sizeof(path_target));
+                ESP_LOGI(TAG, "Established a path from 0x%04x to 0x%04x", path_origin.range_start, path_target.range_start);
+            }
+                break;
+            case ESP_BLE_MESH_DF_TABLE_REMOVE: {
+                memcpy(&path_origin, &change.df_table_info.df_table_entry_add_remove.path_origin, sizeof(path_origin));
+                memcpy(&path_target, &change.df_table_info.df_table_entry_add_remove.path_target, sizeof(path_target));
+                ESP_LOGI(TAG, "Remove a path from 0x%04x to 0x%04x", path_origin.range_start, path_target.range_start);
+            }
+                break;
+            default:
+                ESP_LOGW(TAG, "Unknown action %d", change.action);
+        }
+    }
+
+    return;
 }
 
 // ========================= Remote Provisioning Status Printing function ==================================
@@ -794,6 +854,8 @@ static esp_err_t ble_mesh_init(void)
     esp_ble_mesh_register_config_server_callback(example_ble_mesh_config_server_cb);
     esp_ble_mesh_register_custom_model_callback(ble_mesh_custom_model_cb);
     esp_ble_mesh_register_rpr_server_callback(example_remote_prov_server_callback);
+    //esp_ble_mesh_register_df_client_callback(ble_mesh_directed_forwarding_client_cb);
+    esp_ble_mesh_register_df_server_callback(ble_mesh_df_server_cb);
 
     err = esp_ble_mesh_init(&provision, &composition);
     if (err != ESP_OK) {
