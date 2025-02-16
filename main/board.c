@@ -84,12 +84,12 @@ void handleConnectionTimeout() {
 
 void board_led_operation(uint8_t r, uint8_t g, uint8_t b)
 {
-    //rmt_led_set(r,g,b);
+    //rmt_led_set(r,g,b); TODO: Find migrated extension or find a new library
 }
 
 static void board_led_init(void)
 {
-    //rmt_encoder_init();
+    //rmt_encoder_init(); TODO: Find migrated extension or find a new library
 }
 
 // ====================== repetive code, better clean up ======================
