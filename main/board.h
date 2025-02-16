@@ -12,7 +12,7 @@
 
 #include "driver/uart.h"
 #include "driver/gpio.h"
-#include "led_strip_encoder.h"
+//#include "led_strip_encoder.h"
 #include <arpa/inet.h>
 #include "../Secret/NetworkConfig.h"
 

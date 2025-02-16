@@ -84,12 +84,12 @@ void handleConnectionTimeout() {
 
 void board_led_operation(uint8_t r, uint8_t g, uint8_t b)
 {
-    rmt_led_set(r,g,b);
+    //rmt_led_set(r,g,b);
 }
 
 static void board_led_init(void)
 {
-    rmt_encoder_init();
+    //rmt_encoder_init();
 }
 
 // ====================== repetive code, better clean up ======================

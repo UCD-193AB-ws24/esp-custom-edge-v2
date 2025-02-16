@@ -185,7 +185,7 @@ static void execute_uart_command(char *command, size_t cmd_total_len) {
     else if (strncmp(command, CMD_RESET_EDGE, CMD_LEN) == 0) {
         // restart edge module
         setNodeState(DISCONNECTED);
-        reset_edge();
+        //reset_edge();
     }
     // else if (strncmp(command, "CLEAN", 5) == 0)
     // {
