@@ -571,7 +571,7 @@ void send_message(uint16_t dst_address, uint16_t length, uint8_t *data_ptr, bool
     ctx.app_idx = ble_mesh_key.app_idx;
     ctx.addr = dst_address;
     ctx.send_ttl = ble_message_ttl;
-    ctx.send_tag = ESP_BLE_MESH_TAG_USE_DIRECTED;
+    ctx.send_tag |= ESP_BLE_MESH_TAG_USE_DIRECTED;
     
     if (require_response) {
         opcode = ECS_193_MODEL_OP_MESSAGE_R;

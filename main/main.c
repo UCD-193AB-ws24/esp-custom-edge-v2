@@ -39,6 +39,12 @@ static void recv_message_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, u
     setTimeout(false); // clear edge reset timeout
     // stop_timer();
 
+    if(ctx->recv_cred == ESP_BLE_MESH_DIRECTED_CRED) {
+        ESP_LOGI(TAG_M, "Received via Directed");
+    } else {
+        ESP_LOGI(TAG_M, "Received via Flooding");
+    }
+
     // recived a ble-message from edge ndoe
     uart_sendData(node_addr, msg_ptr, length);
 
