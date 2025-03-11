@@ -13,7 +13,7 @@
   },
   "idf.portWin": "COM5",
   "idf.flashType": "UART",
-  "idf.port": "/dev/ttyUSB2",
+  "idf.port": "/dev/ttyUSB0",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32h2"
   }

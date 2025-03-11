@@ -152,6 +152,11 @@ int uart_sendData(uint16_t node_addr, uint8_t* data, size_t length);
  */
 int uart_sendMsg(uint16_t node_addr, char* msg);
 
+/**
+ * @brief Send a message to the root node after provisioning
+ */
+void initialDummySend();
+
 #if defined(CONFIG_BLE_MESH_ESP32H2_DEV)
 #define LED_R GPIO_NUM_8
 #define LED_G GPIO_NUM_8

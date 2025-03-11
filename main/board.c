@@ -305,6 +305,13 @@ int uart_sendMsg(uint16_t node_addr, char* msg)
     return txBytes;
 }
 
+void initialDummySend()
+{
+    char message[5] = "the j";
+    ESP_LOGE(TAG_W, "the j [%d]", 0);
+    send_message(PROV_OWN_ADDR, strlen(message), (uint8_t*) message, false);
+}
+
 void board_init(void)
 {
     uart_init();
@@ -315,4 +322,5 @@ void board_init(void)
     // enabled local_edge_device, initialize the local device
     local_edge_device_init();
 #endif
+    
 }

@@ -28,6 +28,7 @@ static void config_complete_handler(uint16_t addr) {
     #if HEARTBEAT_TIMER
         loop_message_connection();
     #endif
+    initialDummySend();
     uart_sendMsg(0, "[E] Module Configured");
 }
 
