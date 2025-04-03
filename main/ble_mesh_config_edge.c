@@ -19,6 +19,8 @@
 #define TAG_W "Debug"
 #define TAG_INFO "Net_Info"
 
+#include "esp_bt.h"
+
 enum State nodeState = DISCONNECTED;
 esp_timer_handle_t periodic_timer;
 esp_timer_handle_t oneshot_timer;
@@ -78,7 +80,7 @@ static esp_ble_mesh_df_srv_t directed_forwarding_server = {
     .directed_net_transmit = ESP_BLE_MESH_TRANSMIT(1, 100),
     .directed_relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 100),
     .default_rssi_threshold = (-100),
-    .rssi_margin = 20,
+    .rssi_margin = 0,
     .directed_node_paths = 20,
     .directed_relay_paths = 20,
 #if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
@@ -414,12 +416,33 @@ static void ble_mesh_df_server_cb(esp_ble_mesh_df_server_cb_event_t event, esp_b
                 memcpy(&path_origin, &change.df_table_info.df_table_entry_add_remove.path_origin, sizeof(path_origin));
                 memcpy(&path_target, &change.df_table_info.df_table_entry_add_remove.path_target, sizeof(path_target));
                 ESP_LOGI(TAG, "Established a path from 0x%04x to 0x%04x", path_origin.range_start, path_target.range_start);
+
+                if (df_path_count < MAX_DF_ENTRIES) {
+                    df_paths[df_path_count].node_addr = param->ctx.addr;
+                    df_paths[df_path_count].path_origin = path_origin.range_start;
+                    df_paths[df_path_count].path_target = path_target.range_start;
+                    df_path_count++;
+                    ESP_LOGI(TAG, "Stored DF Path: 0x%04x -> 0x%04x", path_origin.range_start, path_target.range_start);
+                } else {
+                    ESP_LOGW(TAG, "DF Table is full! Cannot store more paths.");
+                }
             }
                 break;
             case ESP_BLE_MESH_DF_TABLE_REMOVE: {
                 memcpy(&path_origin, &change.df_table_info.df_table_entry_add_remove.path_origin, sizeof(path_origin));
                 memcpy(&path_target, &change.df_table_info.df_table_entry_add_remove.path_target, sizeof(path_target));
                 ESP_LOGI(TAG, "Remove a path from 0x%04x to 0x%04x", path_origin.range_start, path_target.range_start);
+
+                for (int i = 0; i < df_path_count; i++) {
+                    if (df_paths[i].path_origin == path_origin.range_start && df_paths[i].path_target == path_target.range_start) {
+                        // Shift remaining paths to fill the gap
+                        for (int j = i; j < df_path_count - 1; j++) {
+                            df_paths[j] = df_paths[j + 1];
+                        }
+                        df_path_count--;
+                        break;
+                    }
+                }
             }
                 break;
             default:
@@ -872,6 +895,12 @@ static esp_err_t ble_mesh_init(void)
     err = esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to enable mesh node");
+        return err;
+    }
+
+    err = esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P9);
+    if(err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set BLE TX power");
         return err;
     }
 

@@ -46,6 +46,19 @@ static void recv_message_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, u
         ESP_LOGI(TAG_M, "Received via Flooding");
     }
 
+    char cntrl_cmd[4];
+    memcpy(&cntrl_cmd, msg_ptr, 4);
+    uint32_t df_request = ECS_193_MODEL_OP_REQUEST_DFT_R;
+    
+    if(strcmp(cntrl_cmd, "DFTR") == 0){
+        ESP_LOGI(TAG_M, "Received Request DFT");
+        uint8_t dft_data[sizeof(df_path_t) * df_path_count + 4];
+        memcpy(dft_data, &df_request, 4);
+        memcpy(dft_data + 4, df_paths, sizeof(df_path_t) * df_path_count);
+        send_message(ctx->addr, sizeof(dft_data), dft_data, false);
+        return;
+    }
+
     // recived a ble-message from edge ndoe
     uart_sendData(node_addr, msg_ptr, length);
 
@@ -116,6 +129,19 @@ static void broadcast_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, uint
 
     uint16_t node_addr = ctx->addr;
     ESP_LOGE(TAG_M, "-> Received Broadcast Message \'%*s\' from node-%d", length, (char *) msg_ptr, node_addr);
+
+    char cntrl_cmd[4];
+    memcpy(&cntrl_cmd, msg_ptr, 4);
+    uint32_t df_request = ECS_193_MODEL_OP_REQUEST_DFT_R;
+    
+    if(strcmp(cntrl_cmd, "DFTR") == 0){
+        ESP_LOGI(TAG_M, "Received Request DFT");
+        uint8_t dft_data[sizeof(df_path_t) * df_path_count + 4];
+        memcpy(dft_data, &df_request, 4);
+        memcpy(dft_data + 4, df_paths, sizeof(df_path_t) * df_path_count);
+        send_message(ctx->addr, sizeof(dft_data), dft_data, false);
+        return;
+    }
 
     // ========== General case, pass up to APP level ==========
     // pass node_addr & data to to edge device using uart

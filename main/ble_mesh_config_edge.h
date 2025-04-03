@@ -17,6 +17,16 @@
 #ifndef _BLE_EDGE_H_
 #define _BLE_EDGE_H_
 
+typedef struct {
+    uint16_t node_addr;
+    uint16_t path_origin;
+    uint16_t path_target;
+} df_path_t;
+
+#define MAX_DF_ENTRIES 10
+static df_path_t df_paths[MAX_DF_ENTRIES];
+static int df_path_count = 0;
+
 /**
  * @brief Loop message connection for handling incoming and outgoing messages.
  */
