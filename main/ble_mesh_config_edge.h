@@ -25,7 +25,7 @@ typedef struct {
 
 #define MAX_DF_ENTRIES 10
 static df_path_t df_paths[MAX_DF_ENTRIES];
-static int df_path_count = 0;
+extern int df_path_count;
 
 /**
  * @brief Loop message connection for handling incoming and outgoing messages.

@@ -51,10 +51,13 @@ static void recv_message_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, u
     uint32_t df_request = ECS_193_MODEL_OP_REQUEST_DFT_R;
     
     if(strcmp(cntrl_cmd, "DFTR") == 0){
+        ESP_LOGI(TAG_M, "Print");
         ESP_LOGI(TAG_M, "Received Request DFT");
         uint8_t dft_data[sizeof(df_path_t) * df_path_count + 4];
         memcpy(dft_data, &df_request, 4);
         memcpy(dft_data + 4, df_paths, sizeof(df_path_t) * df_path_count);
+        ESP_LOGI(TAG_M, "Print 2");
+        ESP_LOGI(TAG_M, "Path count: %d, Length: %d", df_path_count, sizeof(dft_data));
         send_message(ctx->addr, sizeof(dft_data), dft_data, false);
         return;
     }
@@ -139,6 +142,7 @@ static void broadcast_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, uint
         uint8_t dft_data[sizeof(df_path_t) * df_path_count + 4];
         memcpy(dft_data, &df_request, 4);
         memcpy(dft_data + 4, df_paths, sizeof(df_path_t) * df_path_count);
+        ESP_LOGI(TAG_M, "Path count: %d, Length: %d", df_path_count, sizeof(dft_data));
         send_message(ctx->addr, sizeof(dft_data), dft_data, false);
         return;
     }

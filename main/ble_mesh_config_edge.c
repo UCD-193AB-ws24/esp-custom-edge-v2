@@ -21,6 +21,8 @@
 
 #include "esp_bt.h"
 
+int df_path_count = 0;
+
 enum State nodeState = DISCONNECTED;
 esp_timer_handle_t periodic_timer;
 esp_timer_handle_t oneshot_timer;
@@ -79,7 +81,7 @@ static esp_ble_mesh_cfg_srv_t config_server = {
 static esp_ble_mesh_df_srv_t directed_forwarding_server = {
     .directed_net_transmit = ESP_BLE_MESH_TRANSMIT(1, 100),
     .directed_relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 100),
-    .default_rssi_threshold = (-100),
+    .default_rssi_threshold = (-90),
     .rssi_margin = 0,
     .directed_node_paths = 20,
     .directed_relay_paths = 20,
@@ -403,6 +405,15 @@ static void ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event, esp_bl
     }
 }
 
+void printDfPaths() {
+    ESP_LOGW(TAG, "----------- Direct Forwarding Paths --------------");
+    ESP_LOGI(TAG, "Number of paths: %d", df_path_count);
+    for (int i = 0; i < df_path_count; i++) {
+        ESP_LOGI(TAG, "Path %d: Node = 0x%04x Origin = 0x%04x, Target = 0x%04x", i, df_paths[i].node_addr, df_paths[i].path_origin, df_paths[i].path_target);
+    }
+    ESP_LOGW(TAG, "----------- End of Direct Forwarding Paths --------------");
+}
+
 static void ble_mesh_df_server_cb(esp_ble_mesh_df_server_cb_event_t event, esp_ble_mesh_df_server_cb_param_t *param) {
     esp_ble_mesh_df_server_table_change_t change = {0};
     esp_ble_mesh_uar_t path_origin;
@@ -418,7 +429,7 @@ static void ble_mesh_df_server_cb(esp_ble_mesh_df_server_cb_event_t event, esp_b
                 ESP_LOGI(TAG, "Established a path from 0x%04x to 0x%04x", path_origin.range_start, path_target.range_start);
 
                 if (df_path_count < MAX_DF_ENTRIES) {
-                    df_paths[df_path_count].node_addr = param->ctx.addr;
+                    df_paths[df_path_count].node_addr = esp_ble_mesh_get_primary_element_address();
                     df_paths[df_path_count].path_origin = path_origin.range_start;
                     df_paths[df_path_count].path_target = path_target.range_start;
                     df_path_count++;
@@ -449,7 +460,7 @@ static void ble_mesh_df_server_cb(esp_ble_mesh_df_server_cb_event_t event, esp_b
                 ESP_LOGW(TAG, "Unknown action %d", change.action);
         }
     }
-
+    printDfPaths();
     return;
 }
 
