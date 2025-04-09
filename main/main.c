@@ -11,6 +11,7 @@
 #define CMD_RESET_EDGE "RST-E"
 
 uint16_t node_own_addr = 0;
+extern df_path_t df_paths[MAX_DF_ENTRIES];
 
 /***************** Event Handler *****************/
 // prov_complete_handler() get triger when a new node is provitioned to the network
@@ -143,6 +144,7 @@ static void broadcast_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, uint
         memcpy(dft_data, &df_request, 4);
         memcpy(dft_data + 4, df_paths, sizeof(df_path_t) * df_path_count);
         ESP_LOGI(TAG_M, "Path count: %d, Length: %d", df_path_count, sizeof(dft_data));
+        ESP_LOGI(TAG_M, "informaction: %d", df_paths[0].path_origin);
         send_message(ctx->addr, sizeof(dft_data), dft_data, false);
         return;
     }

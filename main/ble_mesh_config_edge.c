@@ -22,6 +22,7 @@
 #include "esp_bt.h"
 
 int df_path_count = 0;
+df_path_t df_paths[MAX_DF_ENTRIES];
 
 enum State nodeState = DISCONNECTED;
 esp_timer_handle_t periodic_timer;
