@@ -21,6 +21,10 @@ typedef struct {
     uint16_t node_addr;
     uint16_t path_origin;
     uint16_t path_target;
+    uint16_t origin_dependents[10]; //TODO: The size of this should be tied to directed relay paths in config
+    uint16_t num_dependents_origin;
+    uint16_t target_dependents[10]; //TODO: The size of this should be tied to directed relay paths in config
+    uint16_t num_dependents_target;
 } __attribute__((packed)) df_path_t;
 
 #define MAX_DF_ENTRIES 10

@@ -411,6 +411,14 @@ void printDfPaths() {
     ESP_LOGI(TAG, "Number of paths: %d", df_path_count);
     for (int i = 0; i < df_path_count; i++) {
         ESP_LOGI(TAG, "Path %d: Node = 0x%04x Origin = 0x%04x, Target = 0x%04x", i, df_paths[i].node_addr, df_paths[i].path_origin, df_paths[i].path_target);
+        ESP_LOGI(TAG, "Origin Dependents (%d):", df_paths[i].num_dependents_origin);
+        for(int j = 0; j < df_paths[i].num_dependents_origin; j++) {
+            ESP_LOGI(TAG, "0x%04x", df_paths[i].origin_dependents[j]);
+        }
+        ESP_LOGI(TAG, "Target Dependents (%d):", df_paths[i].num_dependents_target);
+        for(int j = 0; j < df_paths[i].num_dependents_target; j++) {
+            ESP_LOGI(TAG, "0x%04x", df_paths[i].target_dependents[j]);
+        }
     }
     ESP_LOGW(TAG, "----------- End of Direct Forwarding Paths --------------");
 }
@@ -432,7 +440,11 @@ static void ble_mesh_df_server_cb(esp_ble_mesh_df_server_cb_event_t event, esp_b
                 if (df_path_count < MAX_DF_ENTRIES) {
                     df_paths[df_path_count].node_addr = esp_ble_mesh_get_primary_element_address();
                     df_paths[df_path_count].path_origin = path_origin.range_start;
-                    df_paths[df_path_count].path_target = path_target.range_start;
+                    df_paths[df_path_count].path_target = path_target.range_start;                    
+                    memcpy(&df_paths[df_path_count].origin_dependents, &change.df_table_info.df_table_entry_add_remove.dep_origin_data, sizeof(esp_ble_mesh_uar_t) * change.df_table_info.df_table_entry_add_remove.dep_origin_num);
+                    df_paths[df_path_count].num_dependents_origin = change.df_table_info.df_table_entry_add_remove.dep_origin_num;
+                    memcpy(&df_paths[df_path_count].target_dependents, &change.df_table_info.df_table_entry_add_remove.dep_target_data, sizeof(esp_ble_mesh_uar_t) * change.df_table_info.df_table_entry_add_remove.dep_target_num);
+                    df_paths[df_path_count].num_dependents_target = change.df_table_info.df_table_entry_add_remove.dep_target_num;
                     df_path_count++;
                     ESP_LOGI(TAG, "Stored DF Path: 0x%04x -> 0x%04x", path_origin.range_start, path_target.range_start);
                 } else {
