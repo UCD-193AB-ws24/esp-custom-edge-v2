@@ -141,22 +141,33 @@ static void button_tap_cb(void* arg)
     uint16_t message_length = strlen(message);
     uint16_t message_2_length = strlen(message_2);
 
-    if (control < 2) {
-        ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);
-        send_message(PROV_OWN_ADDR, message_2_length, (uint8_t*) message_2, false);
-        control += 1;
-    } else if (control == 2) {
-        ESP_LOGE(TAG_W, "=== Important Message === [%d]", control);
-        send_important_message(PROV_OWN_ADDR, message_length, (uint8_t*) message);
-        control += 1;
-    } else if (control < 5) {
-        ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);
-        send_message(PROV_OWN_ADDR, message_2_length, (uint8_t*) message_2, false);
-        control += 1;
-    } else {
-        control = 0;
-        ESP_LOGE(TAG_W, "=== Reset Control === [%d]", control);
-    }
+    double lat = (38.54346677679762 - 38.53950225750438) * ((double) esp_random() / UINT32_MAX) + 38.53950225750438;
+    double lon = (-121.77862034970018 + 121.77167791404844) * ((double) esp_random() / UINT32_MAX) - 121.77862034970018;
+
+    uint8_t data[17];
+    data[0] = 5;
+    memcpy(data + 1, &lat, 8);
+    memcpy(data + 9, &lon, 8);
+
+
+    send_message(PROV_OWN_ADDR, 17, data, false);
+
+    // if (control < 2) {
+    //     ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);
+    //     send_message(PROV_OWN_ADDR, message_2_length, (uint8_t*) message_2, false);
+    //     control += 1;
+    // } else if (control == 2) {
+    //     ESP_LOGE(TAG_W, "=== Important Message === [%d]", control);
+    //     send_important_message(PROV_OWN_ADDR, message_length, (uint8_t*) message);
+    //     control += 1;
+    // } else if (control < 5) {
+    //     ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);
+    //     send_message(PROV_OWN_ADDR, message_2_length, (uint8_t*) message_2, false);
+    //     control += 1;
+    // } else {
+    //     control = 0;
+    //     ESP_LOGE(TAG_W, "=== Reset Control === [%d]", control);
+    // }
 }
 
 static void button_liong_press_cb(void *arg)
