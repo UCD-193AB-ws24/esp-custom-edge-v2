@@ -149,7 +149,6 @@ static void button_tap_cb(void* arg)
     memcpy(data + 1, &lat, 8);
     memcpy(data + 9, &lon, 8);
 
-
     send_message(PROV_OWN_ADDR, 17, data, false);
 
     // if (control < 2) {
