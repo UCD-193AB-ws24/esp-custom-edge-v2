@@ -5,6 +5,7 @@
 #include <inttypes.h>
 
 #include "board.h"
+#include "esp_timer.h"
 #include "ble_mesh_config_edge.h"
 #include "../Secret/NetworkConfig.h"
 
@@ -851,6 +852,14 @@ void send_connectivity_wrapper(void *arg) {
     char connectivity_msg[3] = "C";
 
     send_connectivity(PROV_OWN_ADDR, strlen(connectivity_msg), (uint8_t *) connectivity_msg);
+}
+
+void send_sensor_data(uint16_t dst_address, int16_t distance) {
+    sensor_data_t data;
+    data.timestamp = (uint32_t)(esp_timer_get_time() / 1000); // ms
+    data.distance = distance;
+
+    send_message(dst_address, sizeof(sensor_data_t), (uint8_t*)&data, false);
 }
 
 void loop_message_connection() {

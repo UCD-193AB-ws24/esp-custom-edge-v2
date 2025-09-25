@@ -150,6 +150,11 @@ static void button_tap_cb(void* arg)
     memcpy(data + 9, &lon, 8);
 
     send_message(PROV_OWN_ADDR, 17, data, false);
+    
+    // Test function send_sensor_data()
+    static int16_t fake_distance = 100;
+    send_sensor_data(PROV_OWN_ADDR, fake_distance);
+    fake_distance += 10;
 
     // if (control < 2) {
     //     ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);

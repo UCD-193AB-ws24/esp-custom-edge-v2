@@ -9,7 +9,8 @@
     "random": "c",
     "ble_mesh_config_root.h": "c",
     "iot_button.h": "c",
-    "esp_ble_mesh_rpr_model_api.h": "c"
+    "esp_ble_mesh_rpr_model_api.h": "c",
+    "networkconfig.h": "c"
   },
   "idf.portWin": "COM4",
   "idf.flashType": "UART",
