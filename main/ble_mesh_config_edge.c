@@ -854,12 +854,9 @@ void send_connectivity_wrapper(void *arg) {
     send_connectivity(PROV_OWN_ADDR, strlen(connectivity_msg), (uint8_t *) connectivity_msg);
 }
 
-void send_sensor_data(uint16_t dst_address, int16_t distance) {
-    sensor_data_t data;
-    data.timestamp = (uint32_t)(esp_timer_get_time() / 1000); // ms
-    data.distance = distance;
-
-    send_message(dst_address, sizeof(sensor_data_t), (uint8_t*)&data, false);
+void send_gps_data(uint16_t dst_address, gps_data_t *gps) {
+    send_message(dst_address, sizeof(gps_data_t),
+                 (uint8_t *)gps, false);
 }
 
 void loop_message_connection() {

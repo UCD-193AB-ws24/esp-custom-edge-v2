@@ -28,9 +28,13 @@ typedef struct {
 } __attribute__((packed)) df_path_t;
 
 typedef struct {
-    uint32_t timestamp;   // ms
-    int16_t distance;     // cm
-} __attribute__((packed)) sensor_data_t;
+    int32_t latitude;       // 32-bit signed, scaled by 1e7 if needed
+    int32_t longitude;      // 32-bit signed, scaled by 1e7 if needed
+    int32_t utc_time;       // 32-bit signed, Unix timestamp or seconds
+    uint8_t gps_flag;       // 0=unhealthy, 1=healthy
+    uint16_t num_satellites;// number of satellites
+    uint8_t button_state;   // 0=not pressed, 1=pressed
+} __attribute__((packed)) gps_data_t;
 
 #define MAX_DF_ENTRIES 10
 extern df_path_t df_paths[MAX_DF_ENTRIES];
@@ -79,6 +83,19 @@ void set_message_ttl(uint8_t new_ttl);
  * @param require_response flag that indicate if this message expecting response, timeout will get triger if response not recived
  */
 void send_message(uint16_t dst_address, uint16_t length, uint8_t *data_ptr, bool require_response);
+
+/**
+ * @brief Send GPS data to another node in the network
+ *
+ * This function packages a gps_data_t structure and sends it
+ * to the specified destination node over the BLE Mesh network.
+ *
+ * @param dst_address  Destination node's unicast address
+ * @param gps Pointer to gps_data_t structure containing latitude,
+ *            longitude, UTC time, GPS flag, number of satellites,
+ *            and button state
+ */
+void send_gps_data(uint16_t dst_address, gps_data_t *gps);
 
 /**
  * @brief Broadcast Message (bytes) to all node in network

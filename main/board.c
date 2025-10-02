@@ -13,6 +13,7 @@
 #include <string.h>
 #include <time.h>
 #include "board.h"
+#include "ble_mesh_config_edge.h"
 
 #if LOCAL_EDGE_DEVICE
     #include "local_edge_device.c"
@@ -151,10 +152,15 @@ static void button_tap_cb(void* arg)
 
     send_message(PROV_OWN_ADDR, 17, data, false);
     
-    // Test function send_sensor_data()
-    static int16_t fake_distance = 100;
-    send_sensor_data(PROV_OWN_ADDR, fake_distance);
-    fake_distance += 10;
+    gps_data_t gps = {
+        .latitude = 377749000,    // 37.7749° scaled 1e7
+        .longitude = -1224194000, // -122.4194° scaled 1e7
+        .utc_time = 1706800000,   // Unix timestamp
+        .gps_flag = 1,
+        .num_satellites = 8,
+        .button_state = 1
+    };
+    send_gps_data(PROV_OWN_ADDR, &gps);
 
     // if (control < 2) {
     //     ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);
