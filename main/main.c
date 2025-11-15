@@ -87,6 +87,20 @@ static void recv_message_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, u
 
 // recv_response_handler() get triger when module recived an response to previouse sent message that requires an response
 static void recv_response_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, uint8_t *msg_ptr, uint32_t opcode) {
+    // Detect ACK from Root
+    if (opcode == ECS_193_MODEL_OP_RESPONSE) {
+        uint64_t t_recv_ack = esp_timer_get_time();
+
+        ESP_LOGI(TAG_M, "[EDGE] Received ACK at time = %" PRIu64 " us", t_recv_ack);
+
+        extern uint64_t last_send_timestamp;
+        uint64_t rtt = t_recv_ack - last_send_timestamp;
+
+        ESP_LOGI(TAG_M, "[EDGE] RTT = %" PRIu64 " us", rtt);
+
+        return;
+    }
+
     // ESP_LOGI(TAG_M, " ----------- recv_response handler trigered -----------");
     ESP_LOGW(TAG_M, "-> Received Response %d bytes [%*s]\n", length , length, (char *)msg_ptr);
 

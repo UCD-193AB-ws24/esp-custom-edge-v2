@@ -25,6 +25,8 @@
 int df_path_count = 0;
 df_path_t df_paths[MAX_DF_ENTRIES];
 
+uint64_t last_send_timestamp = 0;
+
 enum State nodeState = DISCONNECTED;
 esp_timer_handle_t periodic_timer;
 esp_timer_handle_t oneshot_timer;
@@ -344,6 +346,8 @@ static void ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event, esp_bl
 
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
+        // debug1
+        ESP_LOGW(TAG, "EDGE RECEIVED OPCODE: 0x%06" PRIx32, param->model_operation.opcode);
         switch (param->model_operation.opcode) {
             case ECS_193_MODEL_OP_MESSAGE:
             case ECS_193_MODEL_OP_MESSAGE_R:
@@ -606,6 +610,10 @@ void set_message_ttl(uint8_t new_ttl) {
 
 void send_message(uint16_t dst_address, uint16_t length, uint8_t *data_ptr, bool require_response)
 {
+    extern uint64_t last_send_timestamp;
+    last_send_timestamp = esp_timer_get_time();
+    ESP_LOGI(TAG, "[EDGE] Message send_time = %" PRIu64 " us", last_send_timestamp);
+
     esp_ble_mesh_msg_ctx_t ctx = {0};
     uint32_t opcode = ECS_193_MODEL_OP_MESSAGE;
     esp_ble_mesh_dev_role_t message_role = MSG_ROLE;
@@ -856,7 +864,7 @@ void send_connectivity_wrapper(void *arg) {
 
 void send_gps_data(uint16_t dst_address, gps_data_t *gps) {
     send_message(dst_address, sizeof(gps_data_t),
-                 (uint8_t *)gps, false);
+                 (uint8_t *)gps, true);
 }
 
 void loop_message_connection() {

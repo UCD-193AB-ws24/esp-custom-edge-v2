@@ -39,6 +39,7 @@ typedef struct {
 #define MAX_DF_ENTRIES 10
 extern df_path_t df_paths[MAX_DF_ENTRIES];
 extern int df_path_count;
+extern uint64_t last_send_timestamp;
 
 /**
  * @brief Loop message connection for handling incoming and outgoing messages.
