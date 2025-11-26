@@ -22,8 +22,8 @@
 // #define RX_PIN_H2 23 // dpin connected with usb-uart
 
 #define UART_NUM_H2 UART_NUM_1 // UART_NUM_0 is used for usb monitor already
-#define TX_PIN_H2 0 // we can define any gpio pin
-#define RX_PIN_H2 1 // we can define any gpio pin
+#define TX_PIN_H2 GPIO_NUM_4
+#define RX_PIN_H2 GPIO_NUM_5
 
 #define UART_NUM    UART_NUM_H2
 #define TXD_PIN     TX_PIN_H2

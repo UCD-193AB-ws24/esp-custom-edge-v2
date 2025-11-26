@@ -14,6 +14,7 @@
 #include <time.h>
 #include "board.h"
 #include "ble_mesh_config_edge.h"
+#include "cJSON.h"
 
 #if LOCAL_EDGE_DEVICE
     #include "local_edge_device.c"
@@ -29,6 +30,8 @@ extern void stop_data_send_event();
 extern void sendRobotRequest();
 extern void reset_edge();
 extern void send_important_message(uint16_t dst_address, uint16_t length, uint8_t *data_ptr);
+
+static void uart_rx_task(void *arg);
 
 clock_t start_time;
 bool timeout = false;
@@ -133,33 +136,36 @@ void board_ble_send_to_root(uint8_t *data_buffer, size_t data_length)
 
 static void button_tap_cb(void* arg)
 {
-    ESP_LOGW(TAG_W, "button taped ------------------------- ");
-    static int control = 0;
-
-    char message[20] = "---Important---";
-    char message_2[20] = "---Normal---";
+    ESP_LOGW(TAG_W, "button tapped ------------------------- ");
     
-    uint16_t message_length = strlen(message);
-    uint16_t message_2_length = strlen(message_2);
+    double lat_d = (38.5434667768 - 38.5395022575) * ((double) esp_random() / UINT32_MAX)
+                   + 38.5395022575;
+    double lon_d = (-121.7786203497 + 121.7716779140) * ((double) esp_random() / UINT32_MAX)
+                   - 121.7786203497;
+    int32_t lat_i = (int32_t)(lat_d * 1e7);
+    int32_t lon_i = (int32_t)(lon_d * 1e7);
 
-    double lat = (38.54346677679762 - 38.53950225750438) * ((double) esp_random() / UINT32_MAX) + 38.53950225750438;
-    double lon = (-121.77862034970018 + 121.77167791404844) * ((double) esp_random() / UINT32_MAX) - 121.77862034970018;
+    time_t now = time(NULL);
+    struct tm timeinfo;
+    localtime_r(&now, &timeinfo);
 
-    uint8_t data[17];
-    data[0] = 5;
-    memcpy(data + 1, &lat, 8);
-    memcpy(data + 9, &lon, 8);
+    char iso_time[32];
+    strftime(iso_time, sizeof(iso_time), "%Y-%m-%dT%H:%M:%S", &timeinfo);
 
-    send_message(PROV_OWN_ADDR, 17, data, false);
-    
-    gps_data_t gps = {
-        .latitude = 377749000,    // 37.7749° scaled 1e7
-        .longitude = -1224194000, // -122.4194° scaled 1e7
-        .utc_time = 1706800000,   // Unix timestamp
-        .gps_flag = 1,
-        .num_satellites = 8,
-        .button_state = 1
-    };
+    gps_data_t gps = {0};
+    strncpy(gps.gps_time, iso_time, sizeof(gps.gps_time) - 1);
+
+    gps.fixType     = 3;
+    gps.gnssFixOK   = 1;
+    gps.diffSoln    = 0;
+    gps.numSV       = 10;
+
+    gps.lat         = lat_i;
+    gps.lon         = lon_i;
+
+    gps.button_state = 1; 
+
+    ESP_LOGI(TAG_W, "Button GPS -> time:%s lat:%d lon:%d", gps.gps_time, gps.lat, gps.lon);
     send_gps_data(PROV_OWN_ADDR, &gps);
 
     // if (control < 2) {
@@ -326,6 +332,46 @@ int uart_sendMsg(uint16_t node_addr, char* msg)
     return txBytes;
 }
 
+static void uart_rx_task(void *arg)
+{
+    uint8_t buf[256];
+    uint8_t decoded[256];
+
+    while (1) {
+
+        int len = uart_read_bytes(UART_NUM, buf, sizeof(buf), 10 / portTICK_PERIOD_MS);
+
+        if (len > 0) {
+            int decoded_len = uart_decoded_bytes(buf, len, decoded);
+            decoded[decoded_len] = '\0';
+
+            cJSON *root = cJSON_Parse((char*)decoded);
+            if (root) {
+                gps_data_t gps = {0};
+
+                cJSON *jt = cJSON_GetObjectItem(root, "gps_time");
+                if (cJSON_IsString(jt)) {
+                    strncpy(gps.gps_time, jt->valuestring, sizeof(gps.gps_time) - 1);
+                }
+
+                gps.fixType    = cJSON_GetObjectItem(root, "fixType")->valueint;
+                gps.gnssFixOK  = cJSON_GetObjectItem(root, "gnssFixOK")->valueint;
+                gps.diffSoln   = cJSON_GetObjectItem(root, "diffSoln")->valueint;
+                gps.numSV      = cJSON_GetObjectItem(root, "numSV")->valueint;
+                gps.lat        = cJSON_GetObjectItem(root, "lat")->valueint;
+                gps.lon        = cJSON_GetObjectItem(root, "lon")->valueint;
+
+                gps.button_state = 0;
+
+                send_gps_data(PROV_OWN_ADDR, &gps);
+                ESP_LOGI(TAG_W, "Sent GPS (UART_RX) -> time:%s lat:%d lon:%d", gps.gps_time, gps.lat, gps.lon);
+                cJSON_Delete(root);
+            }
+        }
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
+}
+
 void initialDummySend()
 {
     char message[5] = "the j";
@@ -344,4 +390,5 @@ void board_init(void)
     local_edge_device_init();
 #endif
     
+    xTaskCreate(uart_rx_task, "uart_rx_task", 4096, NULL, 5, NULL);
 }

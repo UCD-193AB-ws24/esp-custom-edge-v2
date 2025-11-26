@@ -347,7 +347,7 @@ void app_main(void)
     }
     
     board_init();
-    xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES - 1, NULL);
+    // xTaskCreate(rx_task, "uart_rx_task", 1024 * 2, NULL, configMAX_PRIORITIES - 1, NULL);
 
     char message[15] = "[E]online\n";
     uart_sendData(0, (uint8_t *)message, strlen(message));
