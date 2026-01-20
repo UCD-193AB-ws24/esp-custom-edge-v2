@@ -157,6 +157,8 @@ int uart_sendMsg(uint16_t node_addr, char* msg);
  */
 void initialDummySend();
 
+void edge_uart_send_json_line(const char *json_line);
+
 #if defined(CONFIG_BLE_MESH_ESP32H2_DEV)
 #define LED_R GPIO_NUM_8
 #define LED_G GPIO_NUM_8

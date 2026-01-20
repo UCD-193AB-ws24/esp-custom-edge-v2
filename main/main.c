@@ -97,6 +97,12 @@ static void recv_response_handler(esp_ble_mesh_msg_ctx_t *ctx, uint16_t length, 
         uint64_t rtt = t_recv_ack - last_send_timestamp;
 
         ESP_LOGI(TAG_M, "[EDGE] RTT = %" PRIu64 " us", rtt);
+            char logbuf[256];
+        double rtt_ms = rtt / 1000.0;
+        snprintf(logbuf, sizeof(logbuf),
+                "{\"src\":\"edge\",\"type\":\"rtt\",\"rtt_ms\":%.3f}",
+                rtt_ms);
+        edge_uart_send_json_line(logbuf);
 
         return;
     }

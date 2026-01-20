@@ -12,6 +12,7 @@
 #include "iot_button.h"
 #include <string.h>
 #include <time.h>
+#include <inttypes.h>
 #include "board.h"
 #include "ble_mesh_config_edge.h"
 #include "cJSON.h"
@@ -134,6 +135,12 @@ void board_ble_send_to_root(uint8_t *data_buffer, size_t data_length)
 
 // ====================== repetive code, better clean up ======================
 
+void edge_uart_send_json_line(const char *json_line)
+{
+    uart_write_bytes(UART_NUM, json_line, strlen(json_line));
+    uart_write_bytes(UART_NUM, "\n", 1);
+}
+
 static void button_tap_cb(void* arg)
 {
     ESP_LOGW(TAG_W, "button tapped ------------------------- ");
@@ -167,6 +174,12 @@ static void button_tap_cb(void* arg)
 
     ESP_LOGI(TAG_W, "Button GPS -> time:%s lat:%d lon:%d", gps.gps_time, gps.lat, gps.lon);
     send_gps_data(PROV_OWN_ADDR, &gps);
+    char logbuf[256];
+    snprintf(logbuf, sizeof(logbuf),
+         "{\"src\":\"edge\",\"type\":\"gps_sent\","
+         "\"time\":\"%s\",\"lat\":%" PRId32 ",\"lon\":%" PRId32 "}",
+         gps.gps_time, gps.lat, gps.lon);
+    edge_uart_send_json_line(logbuf);
 
     // if (control < 2) {
     //     ESP_LOGE(TAG_W, "=== Normal Message === [%d]", control);
@@ -365,6 +378,12 @@ static void uart_rx_task(void *arg)
 
                 send_gps_data(PROV_OWN_ADDR, &gps);
                 ESP_LOGI(TAG_W, "Sent GPS (UART_RX) -> time:%s lat:%d lon:%d", gps.gps_time, gps.lat, gps.lon);
+                char logbuf[256];
+                snprintf(logbuf, sizeof(logbuf),
+                    "{\"src\":\"edge\",\"type\":\"gps_sent\","
+                    "\"time\":\"%s\",\"lat\":%" PRId32 ",\"lon\":%" PRId32 "}",
+                    gps.gps_time, gps.lat, gps.lon);
+                edge_uart_send_json_line(logbuf);
                 cJSON_Delete(root);
             }
         }
