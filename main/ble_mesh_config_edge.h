@@ -17,6 +17,13 @@
 #ifndef _BLE_EDGE_H_
 #define _BLE_EDGE_H_
 
+#pragma once
+
+#include <stdbool.h>
+
+extern bool edge_prefer_flooding;
+extern int edge_df_fail_count;
+
 typedef struct {
     uint16_t node_addr;
     uint16_t path_origin;

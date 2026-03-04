@@ -19,11 +19,14 @@
 #define TAG TAG_EDGE
 #define TAG_W "Debug"
 #define TAG_INFO "Net_Info"
+#define DF_FAIL_THRESHOLD 3
 
 #include "esp_bt.h"
 
 int df_path_count = 0;
 df_path_t df_paths[MAX_DF_ENTRIES];
+bool edge_prefer_flooding = false;
+int edge_df_fail_count = 0;
 
 uint64_t last_send_timestamp = 0;
 
@@ -395,6 +398,9 @@ static void ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event, esp_bl
             break;
         }
         // start_time = esp_timer_get_time();
+        edge_df_fail_count = 0;
+        edge_prefer_flooding = false;
+
         ESP_LOGI(TAG, "Send opcode [0x%06" PRIx32 "] completed", param->model_send_comp.opcode);
         setNodeState(CONNECTED);
         break;
@@ -404,6 +410,16 @@ static void ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event, esp_bl
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
         ESP_LOGW(TAG, "Client message 0x%06" PRIx32 " timeout", param->client_send_timeout.opcode);
+        
+        edge_df_fail_count++;
+        ESP_LOGW(TAG, "[DF] timeout count = %d / %d", edge_df_fail_count, DF_FAIL_THRESHOLD);
+        if (edge_df_fail_count >= DF_FAIL_THRESHOLD) {
+            edge_prefer_flooding = true;
+            edge_df_fail_count = 0;
+            ESP_LOGE(TAG,
+                "[DF] Too many DF failures, fallback to FLOODING");
+        }
+        
         timeout_handler_cb(param->client_send_timeout.ctx, param->client_send_timeout.opcode);
         break;
     default:
@@ -627,8 +643,14 @@ void send_message(uint16_t dst_address, uint16_t length, uint8_t *data_ptr, bool
     ctx.app_idx = ble_mesh_key.app_idx;
     ctx.addr = dst_address;
     ctx.send_ttl = ble_message_ttl;
-    // If Directed-Forwarding mode is needed, use the following line
-    // ctx.send_tag |= ESP_BLE_MESH_TAG_USE_DIRECTED;
+    // Try Directed-Forwarding mode first, if it fails to receive ACK 3 times,
+    // switch to Flooding mode
+    if (!edge_prefer_flooding) {
+        ctx.send_tag |= ESP_BLE_MESH_TAG_USE_DIRECTED;
+        ESP_LOGI(TAG, "[EDGE] Send using DIRECTED FORWARDING");
+    } else {
+        ESP_LOGW(TAG, "[EDGE] Send using FLOODING fallback");
+    }
     
     if (require_response) {
         opcode = ECS_193_MODEL_OP_MESSAGE_R;
